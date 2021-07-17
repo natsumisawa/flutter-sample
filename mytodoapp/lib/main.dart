@@ -1,61 +1,90 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+Future<void> main() async {
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: TodoListPage(),
-    );
+      home: MyAuthPage(),
+    )
   }
 }
 
-class TodoListPage extends StatelessWidget {
+class MyAuthPage extends StatefulWidget {
+  @override
+  _MyAuthPageState createState() => _MyAuthPageState();
+}
+
+class _MyAuthPageState extends State<MyAuthPage> {
+  String newUserEmail = "";
+  String newUserPassword = "";
+  String infoText = "";
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // *** 追加する部分 ***
-      // AppBarを表示し、タイトルも設定
-      appBar: AppBar(
-        title: Text('リスト一覧'),
-      ),
-      body: ListView(
-        children: [
-          Card(
-            child: ListTile(
-              title: Text("たまねぎ"),
-            ),
+        body: Center(
+          child: Container(
+              padding: EdgeInsets.all(32),
+              child: Column(
+                children: <Widget>[
+                  TextFormField(
+                    decoration: InputDecoration(labelText: "メールアドレス"),
+                    onChanged: (String value) {
+                      setState(() {
+                        newUserEmail = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    decoration: InputDecoration(labelText: "パスワード（6文字以上）"),
+                    // 見えないようにする
+                    obscureText: true,
+                    onChanged: (String value) {
+                      setState(() {
+                        newUserPassword = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        final FirebaseAuth auth = FirebaseAuth.instance;
+                        final UserCredential result =
+                        await auth.createUserWithEmailAndPassword(
+                            email: newUserEmail, password: newUserPassword
+                        );
+
+                        final User user = result.user!;
+                        setState(() {
+                          infoText = "登録OK: ${user.email}";
+                        });
+                      } catch (e) {
+                        setState(() {
+                          infoText = "登録NG:${e.toString()}"
+                        });
+                      }
+                    },
+                    child: Text("ユーザー登録"),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(infoText)
+                ],
+              )
           ),
-          Card(
-            child: ListTile(
-              title: Text("にんじん"),
-            ),
-          )
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // --- 省略 ---
-        },
-        child: Icon(Icons.add),
-      ),
+        )
     );
   }
 }
